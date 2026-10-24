@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f3f5fb" />
+  <title>Чат</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #20243a;
+      background: #f3f5fb;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(ellipse at 12% 8%, #e1e9ff 0, transparent 34%),
+        radial-gradient(ellipse at 88% 92%, #e9e2ff 0, transparent 32%),
+        #f6f7fb;
+    }
+
+    button, input, textarea { font: inherit; }
+
+    .chat-card {
+      width: min(100%, 760px);
+      height: min(760px, calc(100vh - 48px));
+      height: min(760px, calc(100dvh - 48px));
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(224, 228, 239, .9);
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 24px 70px rgba(37, 48, 86, .12), 0 3px 10px rgba(37, 48, 86, .04);
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 22px 26px;
+      border-bottom: 1px solid #eef0f6;
+    }
+
+    .chat-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 15px;
+      color: #fff;
+      background: linear-gradient(145deg, #7178f8, #5259df);
+      font-size: 22px;
+      box-shadow: 0 7px 16px rgba(91, 99, 229, .24);
+    }
+
+    h1 { margin: 0; font-size: 19px; letter-spacing: -.3px; }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: #858ba0;
+      font-size: 13px;
+    }
+
+    .connection {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      color: #858ba0;
+      font-size: 12px;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #b9bdca;
+    }
+
+    .connection[data-state="connected"] { color: #39876a; }
+    .connection[data-state="connected"] .connection-dot { background: #42b883; }
+    .connection[data-state="connecting"] .connection-dot { background: #e7a738; }
+
+    #join {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 32px;
+      text-align: center;
+    }
+
+    #join h2 { margin: 0; font-size: 22px; letter-spacing: -.4px; }
+    #join p { max-width: 340px; margin: 0 0 8px; color: #858ba0; line-height: 1.55; }
+
+    .join-controls {
+      width: min(100%, 380px);
+      display: flex;
+      gap: 10px;
+    }
+
+    #username, #text {
+      min-width: 0;
+      border: 1px solid #e1e5ef;
+      outline: none;
+      color: #20243a;
+      background: #fbfcff;
+      transition: border-color .18s, box-shadow .18s, background .18s;
+    }
+
+    #username:focus, #text:focus {
+      border-color: #777ef0;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(103, 111, 235, .13);
+    }
+
+    #username {
+      flex: 1;
+      height: 46px;
+      padding: 0 14px;
+      border-radius: 13px;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      color: white;
+      background: #5b63e5;
+      transition: background .18s, transform .18s, opacity .18s;
+    }
+
+    button:hover { background: #4d55d3; }
+    button:active { transform: translateY(1px); }
+    button:focus-visible { outline: 3px solid rgba(103, 111, 235, .3); outline-offset: 2px; }
+    button:disabled { cursor: wait; opacity: .65; }
+
+    #join-btn { padding: 0 20px; border-radius: 13px; font-weight: 600; }
+
+    #messages {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      padding: 24px 26px;
+      background: #fcfcfe;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      max-width: min(82%, 520px);
+      align-self: flex-start;
+      padding: 11px 15px;
+      border: 1px solid #eceef5;
+      border-radius: 5px 17px 17px;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(33, 43, 77, .035);
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    .message-author {
+      display: block;
+      margin-bottom: 3px;
+      color: #5b63d9;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .message-system {
+      max-width: 100%;
+      align-self: center;
+      padding: 4px 10px;
+      border: 0;
+      color: #9297a8;
+      background: transparent;
+      box-shadow: none;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    #form {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      padding: 16px 20px;
+      border-top: 1px solid #eef0f6;
+      background: #fff;
+    }
+
+    #text {
+      flex: 1;
+      min-height: 46px;
+      max-height: 140px;
+      resize: vertical;
+      padding: 12px 14px;
+      border-radius: 14px;
+      line-height: 1.4;
+    }
+
+    #send-btn {
+      width: 46px;
+      height: 46px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+    }
+
+    #send-btn svg { width: 20px; height: 20px; }
+
+    .hint {
+      padding: 0 20px 13px;
+      color: #a0a5b3;
+      background: #fff;
+      font-size: 11px;
+      text-align: right;
+    }
+
+    [hidden] { display: none !important; }
+
+    @media (max-width: 560px) {
+      body { padding: 0; }
+      .chat-card {
+        width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        border: 0;
+        border-radius: 0;
+      }
+      .chat-header { padding: 17px 18px; }
+      #messages { padding: 20px 16px; }
+      #form { padding: 12px 14px; }
+      .hint { padding-right: 14px; }
+      .message { max-width: 90%; }
+      #join { padding: 24px 18px; }
+      .join-controls { flex-direction: column; }
+      #join-btn { height: 46px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="chat-card">
+    <header class="chat-header">
+      <div class="chat-icon" aria-hidden="true">✦</div>
+      <div>
+        <h1>Анонимный чат</h1>
+        <p class="subtitle">Общайтесь просто и свободно</p>
+      </div>
+      <div id="connection" class="connection" data-state="disconnected" aria-live="polite">
+        <span class="connection-dot" aria-hidden="true"></span>
+        <span id="connection-label">Не подключено</span>
+      </div>
+    </header>
+
+    <form id="join">
+      <h2>Добро пожаловать!</h2>
+      <p>Введите имя, чтобы присоединиться к беседе</p>
+      <div class="join-controls">
+        <input id="username" placeholder="Ваше имя" maxlength="30" minlength="2" autocomplete="nickname" required />
+        <button id="join-btn" type="submit">Войти в чат</button>
+      </div>
+    </form>
+
+    <section id="messages" aria-label="Сообщения чата" aria-live="polite" hidden></section>
+    <form id="form" hidden>
+      <textarea id="text" placeholder="Напишите сообщение..." maxlength="1000" rows="1" aria-label="Сообщение"></textarea>
+      <button id="send-btn" type="submit" aria-label="Отправить сообщение" title="Отправить">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M21 3 10.8 13.2M21 3l-6.5 18-3.7-7.8L3 9.5 21 3Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </form>
+    <div id="hint" class="hint" hidden>Enter — отправить · Shift + Enter — новая строка</div>
+  </main>
+
+  <script>
+    const joinForm = document.getElementById("join");
+    const form = document.getElementById("form");
+    const messagesDiv = document.getElementById("messages");
+    const usernameInput = document.getElementById("username");
+    const joinBtn = document.getElementById("join-btn");
+    const textInput = document.getElementById("text");
+    const connection = document.getElementById("connection");
+    const connectionLabel = document.getElementById("connection-label");
+    const hint = document.getElementById("hint");
+
+    let ws;
+
+    function setConnectionState(state, label) {
+      connection.dataset.state = state;
+      connectionLabel.textContent = label;
+    }
+
+    function addSystemLine(text) {
+      const line = document.createElement("div");
+      line.className = "message message-system";
+      line.textContent = text;
+      messagesDiv.appendChild(line);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function addMessage(username, text) {
+      const message = document.createElement("div");
+      message.className = "message";
+      const author = document.createElement("span");
+      author.className = "message-author";
+      author.textContent = username;
+      const body = document.createElement("span");
+      body.textContent = text;
+      message.append(author, body);
+      messagesDiv.appendChild(message);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    joinForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const username = usernameInput.value.trim();
+      if (username.length < 2 || username.length > 30) {
+        usernameInput.setCustomValidity("Имя должно содержать от 2 до 30 символов");
+        usernameInput.reportValidity();
+        usernameInput.setCustomValidity("");
+        return;
+      }
+
+      joinBtn.disabled = true;
+      setConnectionState("connecting", "Подключение...");
+      const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${protocol}//${location.host}/ws`);
+
+      ws.addEventListener("open", () => {
+        ws.send(JSON.stringify({ username }));
+        joinForm.hidden = true;
+        messagesDiv.hidden = false;
+        form.hidden = false;
+        hint.hidden = false;
+        setConnectionState("connected", "В сети");
+        textInput.focus();
+      });
+
+      ws.addEventListener("message", (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "message") {
+          addMessage(data.username, data.text);
+        } else if (data.type === "system") {
+          addSystemLine(data.text);
+        } else if (data.type === "error") {
+          addSystemLine(data.detail);
+        }
+      });
+
+      ws.addEventListener("error", () => {
+        setConnectionState("disconnected", "Ошибка соединения");
+        addSystemLine("Не удалось подключиться. Попробуйте войти ещё раз.");
+        joinBtn.disabled = false;
+      });
+
+      ws.addEventListener("close", () => {
+        setConnectionState("disconnected", "Не подключено");
+        addSystemLine("Соединение закрыто");
+        form.hidden = true;
+        hint.hidden = true;
+        messagesDiv.hidden = true;
+        joinForm.hidden = false;
+        joinBtn.disabled = false;
+      });
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const text = textInput.value.trim();
+      if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ text }));
+      textInput.value = "";
+      textInput.focus();
+    });
+
+    textInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+  </script>
+</body>
+</html>
